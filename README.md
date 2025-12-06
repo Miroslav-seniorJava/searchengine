@@ -120,7 +120,7 @@ src/
 ## 👤 Автор проекта
 **Мирослав Самоваров**  
 Java Developer (Skillbox)  
-GitHub: https://github.com/USERNAME
+GitHub: https://github.com/Miroslav-seniorJava
 
 ---
 
