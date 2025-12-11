@@ -9,7 +9,7 @@ import searchengine.config.SitesList;
 import searchengine.model.*;
 import searchengine.repository.*;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -34,11 +34,9 @@ public class IndexingServiceImpl implements IndexingService {
     public boolean startIndexing() {
         if (running.get()) return false;
         running.set(true);
-
         for (SitesList.SiteItem siteItem : sitesList.getSites()) {
             executor.submit(() -> indexSite(siteItem));
         }
-
         return true;
     }
 
@@ -55,41 +53,40 @@ public class IndexingServiceImpl implements IndexingService {
                     .userAgent("SearchEngineBot/1.0")
                     .timeout(10000)
                     .get();
-
             String title = doc.title();
             String body = doc.body() != null ? doc.body().text() : "";
             String content = title + " " + body;
 
-            URI uri = URI.create(url);
-            String host = uri.getHost();
+            URI u = URI.create(url);
+            String host = u.getHost();
 
             Optional<Site> optionalSite = siteRepo.findAll().stream()
-                    .filter(s -> host.endsWith(URI.create(s.getUrl()).getHost()))
+                    .filter(s -> {
+                        try {
+                            return host != null && URI.create(s.getUrl()).getHost() != null &&
+                                    host.endsWith(URI.create(s.getUrl()).getHost());
+                        } catch (Exception ex) {
+                            return false;
+                        }
+                    })
                     .findFirst();
 
-            Site site = optionalSite.orElseGet(() ->
-                    siteRepo.save(
-                            Site.builder()
-                                    .url(uri.getScheme() + "://" + host)
-                                    .name(host)
-                                    .status(Status.INDEXED)
-                                    .statusTime(LocalDateTime.now())
-                                    .build()
-                    )
-            );
+            Site site = optionalSite.orElseGet(() -> siteRepo.save(Site.builder()
+                    .url(u.getScheme() + "://" + host)
+                    .name(host)
+                    .status(Status.INDEXED)
+                    .statusTime(LocalDateTime.now())
+                    .build()));
 
-            Page page = pageRepo.save(
-                    Page.builder()
-                            .site(site)
-                            .path(url)
-                            .code(200)
-                            .content(content)
-                            .build()
-            );
+            Page page = pageRepo.save(Page.builder()
+                    .site(site)
+                    .path(url)
+                    .code(200)
+                    .content(content)
+                    .build());
 
             indexPageContent(site, page, content);
             return true;
-
         } catch (Exception e) {
             return false;
         }
@@ -97,32 +94,25 @@ public class IndexingServiceImpl implements IndexingService {
 
     private void indexSite(SitesList.SiteItem siteItem) {
         String root = siteItem.getUrl();
-
         try {
-            Site site = siteRepo.findByUrl(root)
-                    .orElseGet(() ->
-                            siteRepo.save(
-                                    Site.builder()
-                                            .url(root)
-                                            .name(siteItem.getName())
-                                            .status(Status.INDEXING)
-                                            .statusTime(LocalDateTime.now())
-                                            .build()
-                            )
-                    );
+            Site site = siteRepo.findByUrl(root).orElseGet(() -> siteRepo.save(
+                    Site.builder()
+                            .url(root)
+                            .name(siteItem.getName())
+                            .status(Status.INDEXING)
+                            .statusTime(LocalDateTime.now())
+                            .build()
+            ));
 
-            Queue<UrlDepth> queue = new ArrayDeque<>();
+            Queue<UrlDepth> q = new ArrayDeque<>();
             Set<String> visited = ConcurrentHashMap.newKeySet();
-
-            queue.add(new UrlDepth(root, 0));
+            q.add(new UrlDepth(root, 0));
             visited.add(root);
 
-            while (!queue.isEmpty() && running.get()) {
-
-                UrlDepth current = queue.poll();
-
+            while (!q.isEmpty() && running.get()) {
+                UrlDepth ud = q.poll();
                 try {
-                    Document doc = Jsoup.connect(current.url)
+                    Document doc = Jsoup.connect(ud.url)
                             .userAgent("SearchEngineBot/1.0")
                             .timeout(10000)
                             .get();
@@ -131,41 +121,38 @@ public class IndexingServiceImpl implements IndexingService {
                     String body = doc.body() != null ? doc.body().text() : "";
                     String content = title + " " + body;
 
-                    Page page = pageRepo.save(
-                            Page.builder()
-                                    .site(site)
-                                    .path(current.url)
-                                    .code(200)
-                                    .content(content)
-                                    .build()
-                    );
+                    Page page = Page.builder()
+                            .site(site)
+                            .path(ud.url)
+                            .code(200)
+                            .content(content)
+                            .build();
+                    page = pageRepo.save(page);
 
                     indexPageContent(site, page, content);
 
-                    if (current.depth < 2) { // Глубину можно вынести в настройки
-                        Elements aTags = doc.select("a[href]");
-
-                        for (var a : aTags) {
-                            String href = a.absUrl("href");
-
-                            if (href.isBlank() || visited.contains(href)) continue;
-
+                    if (ud.depth < 2) { // configurable depth
+                        Elements links = doc.select("a[href]");
+                        for (var link : links) {
+                            String href = link.absUrl("href");
+                            if (href == null || href.isBlank()) continue;
+                            if (visited.contains(href)) continue;
                             try {
-                                URI check = URI.create(href);
-                                if (check.getHost() == null) continue;
-                                if (!check.getHost().endsWith(URI.create(root).getHost())) continue;
-                            } catch (Exception ignore) {
+                                URI u = URI.create(href);
+                                if (u.getHost() == null) continue;
+                                if (!u.getHost().endsWith(URI.create(root).getHost())) continue;
+                            } catch (Exception ex) {
                                 continue;
                             }
-
                             visited.add(href);
-                            queue.add(new UrlDepth(href, current.depth + 1));
+                            q.add(new UrlDepth(href, ud.depth + 1));
                         }
                     }
 
                     Thread.sleep(150);
-
-                } catch (Exception ignore) {}
+                } catch (Exception ex) {
+                    // ignore single page errors
+                }
             }
 
             site.setStatus(Status.INDEXED);
@@ -173,11 +160,7 @@ public class IndexingServiceImpl implements IndexingService {
             siteRepo.save(site);
 
         } catch (Exception e) {
-            Site failed = siteRepo.findByUrl(root)
-                    .orElseGet(() ->
-                            Site.builder().url(root).name(siteItem.getName()).build()
-                    );
-
+            Site failed = siteRepo.findByUrl(root).orElseGet(() -> Site.builder().url(root).name(siteItem.getName()).build());
             failed.setStatus(Status.FAILED);
             failed.setLastError(e.getMessage());
             failed.setStatusTime(LocalDateTime.now());
@@ -187,37 +170,27 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Transactional
     protected void indexPageContent(Site site, Page page, String content) {
+        Map<String, Integer> freq = lemmatizer.collectLemmaFrequencies(content);
 
-        Map<String, Integer> frequencies = lemmatizer.collectLemmaFrequencies(content);
-
-        for (var entry : frequencies.entrySet()) {
-
-            String lemmaStr = entry.getKey();
-            int count = entry.getValue();
+        for (var e : freq.entrySet()) {
+            String lemmaStr = e.getKey();
+            int count = e.getValue();
 
             Lemma lemma = lemmaRepo.findByLemmaAndSiteId(lemmaStr, site.getId())
-                    .orElseGet(() ->
-                            lemmaRepo.save(
-                                    Lemma.builder()
-                                            .lemma(lemmaStr)
-                                            .site(site)
-                                            .frequency(0)
-                                            .build()
-                            )
-                    );
+                    .orElseGet(() -> lemmaRepo.save(Lemma.builder().lemma(lemmaStr).site(site).frequency(0).build()));
 
-            lemma.setFrequency(lemma.getFrequency() + 1);
+            lemma.setFrequency(lemma.getFrequency() + count);
             lemmaRepo.save(lemma);
 
-            Index index = Index.builder()
+            Index idx = Index.builder()
                     .page(page)
                     .lemma(lemma)
-                    .rank(count) // важное исправление!
+                    .rank(count)
                     .build();
 
-            indexRepo.save(index);
+            indexRepo.save(idx);
         }
     }
 
-    private record UrlDepth(String url, int depth) {}
+    private static class UrlDepth { String url; int depth; UrlDepth(String u,int d){url=u;depth=d;} }
 }
