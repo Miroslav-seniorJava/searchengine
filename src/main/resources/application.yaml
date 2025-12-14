@@ -1,23 +1,14 @@
-# example values
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/search_engine?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://localhost:5432/searchengine
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
+      ddl-auto: none
+    show-sql: true
 
-indexing-settings:
-  sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
-    - url: https://www.skillbox.ru
-      name: Skillbox
-    - url: https://www.playback.ru
-      name: PlayBack.Ru
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml

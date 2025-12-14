@@ -1,10 +1,10 @@
 package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.search.SearchResponse;
+import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
@@ -14,49 +14,37 @@ import searchengine.services.StatisticsService;
 @RequiredArgsConstructor
 public class ApiController {
 
+    private final StatisticsService statisticsService;
     private final IndexingService indexingService;
     private final SearchService searchService;
-    private final StatisticsService statisticsService;
 
     @GetMapping("/statistics")
-    public ResponseEntity<StatisticsResponse> statistics() {
-        return ResponseEntity.ok(statisticsService.getStatistics());
+    public StatisticsResponse statistics() {
+        return statisticsService.getStatistics();
     }
 
-    @GetMapping("/startIndexing")
-    public ResponseEntity<?> startIndexing() {
-        boolean started = indexingService.startIndexing();
-        if (!started) {
-            return ResponseEntity.ok(
-                    java.util.Map.of("result", false, "error", "Индексация уже запущена")
-            );
-        }
-        return ResponseEntity.ok(java.util.Map.of("result", true));
+    @PostMapping("/startIndexing")
+    public IndexingResponse startIndexing() {
+        return indexingService.start();
     }
 
-    @GetMapping("/stopIndexing")
-    public ResponseEntity<?> stopIndexing() {
-        boolean stopped = indexingService.stopIndexing();
-        return ResponseEntity.ok(java.util.Map.of("result", stopped));
+    @PostMapping("/stopIndexing")
+    public IndexingResponse stopIndexing() {
+        return indexingService.stop();
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<?> indexPage(@RequestParam String url) {
-        boolean ok = indexingService.indexPage(url);
-        if (!ok) {
-            return ResponseEntity.ok(java.util.Map.of("result", false, "error", "Страница не найдена"));
-        }
-        return ResponseEntity.ok(java.util.Map.of("result", true));
+    public IndexingResponse indexPage(@RequestParam String url) {
+        return indexingService.indexPage(url);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<SearchResponse> search(
+    public SearchResponse search(
             @RequestParam String query,
             @RequestParam(required = false) String site,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "20") int limit
     ) {
-        SearchResponse response = searchService.search(query, site, offset, limit);
-        return ResponseEntity.ok(response);
+        return searchService.search(query, site, offset, limit);
     }
 }

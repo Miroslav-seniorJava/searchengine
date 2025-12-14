@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+         http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="1-create-site-table" author="miroslav">
+        <createTable tableName="site">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="status" type="varchar(20)"/>
+            <column name="status_time" type="timestamp"/>
+            <column name="last_error" type="text"/>
+            <column name="url" type="text"/>
+            <column name="name" type="text"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2-create-page-table" author="miroslav">
+        <createTable tableName="page">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="site_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="text"/>
+            <column name="code" type="int"/>
+            <column name="content" type="text"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="page"
+                                 baseColumnNames="site_id"
+                                 referencedTableName="site"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_page_site"/>
+    </changeSet>
+
+    <changeSet id="3-create-lemma-table" author="miroslav">
+        <createTable tableName="lemma">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="site_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lemma" type="varchar(255)"/>
+            <column name="frequency" type="int"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="lemma"
+                                 baseColumnNames="site_id"
+                                 referencedTableName="site"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_lemma_site"/>
+        <createIndex indexName="idx_lemma_site_lemma" tableName="lemma">
+            <column name="site_id"/>
+            <column name="lemma"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="4-create-searchindex-table" author="miroslav">
+        <createTable tableName="search_index">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="page_id" type="int"/>
+            <column name="lemma_id" type="int"/>
+            <column name="rank" type="float"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="search_index"
+                                 baseColumnNames="page_id"
+                                 referencedTableName="page"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_index_page"/>
+        <addForeignKeyConstraint baseTableName="search_index"
+                                 baseColumnNames="lemma_id"
+                                 referencedTableName="lemma"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_index_lemma"/>
+    </changeSet>
+
+</databaseChangeLog>
