@@ -1,0 +1,146 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: miroslav
+      changes:
+        - createTable:
+            tableName: site
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status_time
+                  type: TIMESTAMP
+              - column:
+                  name: last_error
+                  type: TEXT
+
+  - changeSet:
+      id: 2
+      author: miroslav
+      changes:
+        - createTable:
+            tableName: page
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: site_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: path
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: code
+                  type: INTEGER
+              - column:
+                  name: content
+                  type: TEXT
+
+        - addForeignKeyConstraint:
+            baseTableName: page
+            baseColumnNames: site_id
+            referencedTableName: site
+            referencedColumnNames: id
+            constraintName: fk_page_site
+
+  - changeSet:
+      id: 3
+      author: miroslav
+      changes:
+        - createTable:
+            tableName: lemma
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: site_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lemma
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: frequency
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: lemma
+            baseColumnNames: site_id
+            referencedTableName: site
+            referencedColumnNames: id
+            constraintName: fk_lemma_site
+
+  - changeSet:
+      id: 4
+      author: miroslav
+      changes:
+        - createTable:
+            tableName: search_index
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: page_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lemma_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rank
+                  type: FLOAT
+
+        - addForeignKeyConstraint:
+            baseTableName: search_index
+            baseColumnNames: page_id
+            referencedTableName: page
+            referencedColumnNames: id
+            constraintName: fk_index_page
+
+        - addForeignKeyConstraint:
+            baseTableName: search_index
+            baseColumnNames: lemma_id
+            referencedTableName: lemma
+            referencedColumnNames: id
+            constraintName: fk_index_lemma
