@@ -4,24 +4,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.search.SearchResponse;
-import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.SearchService;
-import searchengine.services.StatisticsService;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ApiController {
 
-    private final StatisticsService statisticsService;
     private final IndexingService indexingService;
     private final SearchService searchService;
-
-    @GetMapping("/statistics")
-    public StatisticsResponse statistics() {
-        return statisticsService.getStatistics();
-    }
 
     @PostMapping("/startIndexing")
     public IndexingResponse startIndexing() {
@@ -31,11 +23,6 @@ public class ApiController {
     @PostMapping("/stopIndexing")
     public IndexingResponse stopIndexing() {
         return indexingService.stop();
-    }
-
-    @PostMapping("/indexPage")
-    public IndexingResponse indexPage(@RequestParam String url) {
-        return indexingService.indexPage(url);
     }
 
     @GetMapping("/search")

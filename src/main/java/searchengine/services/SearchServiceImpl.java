@@ -24,8 +24,7 @@ public class SearchServiceImpl implements SearchService {
             );
         }
 
-        // TODO: здесь будет реальная логика поиска
-        List<SearchResult> results = Collections.emptyList();
+        List<SearchResult> results = List.of(); // заглушка логики
 
         return new SearchResponse(
                 true,

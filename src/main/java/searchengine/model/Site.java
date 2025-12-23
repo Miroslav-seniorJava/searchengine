@@ -1,7 +1,9 @@
 package searchengine.model;
 
-import lombok.*;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,27 +11,21 @@ import java.util.List;
 @Table(name = "site")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Site {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    @Enumerated(EnumType.STRING)
-    private Status status;
-
-    @Column(name = "status_time")
-    private LocalDateTime statusTime;
-
-    @Column(name = "last_error", columnDefinition = "TEXT")
-    private String lastError;
+    private Long id;
 
     private String url;
 
     private String name;
+
+    private String status;
+
+    private LocalDateTime statusTime;
+
+    private String lastError;
 
     @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
     private List<Page> pages;

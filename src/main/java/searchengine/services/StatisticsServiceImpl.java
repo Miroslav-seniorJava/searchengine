@@ -42,7 +42,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                     site.getName(),
                     site.getPages() != null ? site.getPages().size() : 0,
                     site.getLemmas() != null ? site.getLemmas().size() : 0,
-                    site.getStatus().name(),
+                    site.getStatus(),
                     site.getLastError() != null ? site.getLastError() : "",
                     site.getStatusTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
             );

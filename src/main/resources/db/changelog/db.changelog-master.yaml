@@ -1,4 +1,5 @@
 databaseChangeLog:
+
   - changeSet:
       id: 1
       author: miroslav
@@ -11,12 +12,14 @@ databaseChangeLog:
                   type: BIGSERIAL
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_site
               - column:
                   name: url
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
                     unique: true
+                    uniqueConstraintName: uq_site_url
               - column:
                   name: name
                   type: VARCHAR(255)
@@ -46,6 +49,7 @@ databaseChangeLog:
                   type: BIGSERIAL
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_page
               - column:
                   name: site_id
                   type: BIGINT
@@ -69,6 +73,14 @@ databaseChangeLog:
             referencedTableName: site
             referencedColumnNames: id
             constraintName: fk_page_site
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: page
+            indexName: idx_page_path
+            columns:
+              - column:
+                  name: path
 
   - changeSet:
       id: 3
@@ -82,6 +94,7 @@ databaseChangeLog:
                   type: BIGSERIAL
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_lemma
               - column:
                   name: site_id
                   type: BIGINT
@@ -104,6 +117,14 @@ databaseChangeLog:
             referencedTableName: site
             referencedColumnNames: id
             constraintName: fk_lemma_site
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: lemma
+            indexName: idx_lemma_lemma
+            columns:
+              - column:
+                  name: lemma
 
   - changeSet:
       id: 4
@@ -117,6 +138,7 @@ databaseChangeLog:
                   type: BIGSERIAL
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_search_index
               - column:
                   name: page_id
                   type: BIGINT
@@ -130,6 +152,8 @@ databaseChangeLog:
               - column:
                   name: rank
                   type: FLOAT
+                  constraints:
+                    nullable: false
 
         - addForeignKeyConstraint:
             baseTableName: search_index
@@ -137,6 +161,7 @@ databaseChangeLog:
             referencedTableName: page
             referencedColumnNames: id
             constraintName: fk_index_page
+            onDelete: CASCADE
 
         - addForeignKeyConstraint:
             baseTableName: search_index
@@ -144,3 +169,13 @@ databaseChangeLog:
             referencedTableName: lemma
             referencedColumnNames: id
             constraintName: fk_index_lemma
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: search_index
+            indexName: idx_index_page_lemma
+            columns:
+              - column:
+                  name: page_id
+              - column:
+                  name: lemma_id
