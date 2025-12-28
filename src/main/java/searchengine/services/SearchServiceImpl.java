@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.search.SearchResponse;
 import searchengine.dto.search.SearchResult;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,22 +15,13 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public SearchResponse search(String query, String site, int offset, int limit) {
 
-        if (query == null || query.isBlank()) {
-            return new SearchResponse(
-                    false,
-                    0,
-                    Collections.emptyList(),
-                    "Задан пустой поисковый запрос"
-            );
+        if (query == null || query.trim().isEmpty()) {
+            return new SearchResponse(false, 0, new ArrayList<>(), "Пустой поисковый запрос");
         }
 
-        List<SearchResult> results = List.of(); // заглушка логики
+        // ⚠️ Заглушка логики поиска (на следующем шаге сделаем настоящую)
+        List<SearchResult> results = new ArrayList<>();
 
-        return new SearchResponse(
-                true,
-                results.size(),
-                results,
-                null
-        );
+        return new SearchResponse(true, results.size(), results, null);
     }
 }

@@ -8,13 +8,18 @@ import searchengine.dto.search.SearchResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public IndexingResponse handleIllegalArgument(IllegalArgumentException ex) {
+    @ExceptionHandler(IndexingException.class)
+    public IndexingResponse handleIndexingException(IndexingException ex) {
         return new IndexingResponse(false, ex.getMessage());
     }
 
-    @ExceptionHandler(Exception.class)
-    public SearchResponse handleAnyException(Exception ex) {
+    @ExceptionHandler(SearchException.class)
+    public SearchResponse handleSearchException(SearchException ex) {
         return new SearchResponse(false, 0, null, ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public IndexingResponse handleCommonException(Exception ex) {
+        return new IndexingResponse(false, "Внутренняя ошибка сервера");
     }
 }
