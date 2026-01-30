@@ -31,17 +31,11 @@ public class SearchServiceImpl implements SearchService {
         Map<Page, Float> relevance = new HashMap<>();
 
         for (Lemma lemma : lemmaList) {
-
-            List<Index> indexes = indexRepo.findByLemma(lemma);
-
-            for (Index idx : indexes) {
-
-                Page page = idx.getPage();
-                float rank = idx.getRank();
-
-                relevance.put(
-                        page,
-                        relevance.getOrDefault(page, 0f) + rank
+            for (Index idx : indexRepo.findByLemma(lemma)) {
+                relevance.merge(
+                        idx.getPage(),
+                        idx.getRank(),
+                        Float::sum
                 );
             }
         }
@@ -51,19 +45,14 @@ public class SearchServiceImpl implements SearchService {
                 .sorted((a, b) -> Float.compare(b.getValue(), a.getValue()))
                 .skip(offset)
                 .limit(limit)
-                .map(entry -> {
-
-                    Page page = entry.getKey();
-
-                    return new SearchResult(
-                            page.getSite().getUrl(),
-                            page.getSite().getName(),
-                            page.getPath(),
-                            "",
-                            "",
-                            entry.getValue()
-                    );
-                })
+                .map(e -> new SearchResult(
+                        e.getKey().getSite().getUrl(),
+                        e.getKey().getSite().getName(),
+                        e.getKey().getPath(),
+                        "",
+                        "",
+                        e.getValue()
+                ))
                 .collect(Collectors.toList());
 
         return new SearchResponse(true, relevance.size(), results, null);
